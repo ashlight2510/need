@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>지금 나에게 필요한 한마디</title>
+    <meta
+      property="og:image"
+      content="https://dummyimage.com/1200x630/0f172a/ffffff&text=NEED"
+    />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <script src="https://pagead2.googlesyndication.com/pagead/managed/js/adsense/m202512100101/show_ads_impl_fy2021.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body
+    class="bg-gradient-to-br from-blue-50 to-purple-100 min-h-screen flex flex-col items-center justify-center p-6"
+  >
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 text-center">
+      <h1 class="text-2xl font-bold text-gray-800 mb-2">
+        🧭 지금 나에게 가장 필요한 한마디
+      </h1>
+      <p class="text-sm text-gray-600 mb-6">
+        몇 가지 감정과 상황을 클릭하면,<br />오늘 너에게 필요한 말 한 줄을
+        전해줄게요.
+      </p>
+
+      <div id="question-container">
+        <!-- 질문 카드가 여기에 표시됩니다 -->
+      </div>
+
+      <div id="progress" class="text-sm text-gray-500 mt-4">1 / 4</div>
+
+      <div class="mt-6 flex justify-between">
+        <button
+          id="prev-btn"
+          class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg"
+          disabled
+        >
+          이전
+        </button>
+        <button
+          id="next-btn"
+          class="bg-blue-500 text-white px-4 py-2 rounded-lg"
+        >
+          다음
+        </button>
+      </div>
+    </div>
+
+    <a
+      href="https://funnyfunny.cloud"
+      class="mt-5 inline-flex items-center gap-2 rounded-full bg-white/80 px-5 py-2 text-sm font-semibold text-gray-700 shadow-md ring-1 ring-gray-200 backdrop-blur transition hover:-translate-y-0.5 hover:bg-white hover:text-gray-900"
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      다른 서비스 보기
+      <span aria-hidden="true">→</span>
+    </a>
+
+    <script>
+      const questions = [
+        {
+          title: "지금 기분을 고른다면?",
+          options: [
+            "😴 지침",
+            "😕 답답함",
+            "😠 화남",
+            "😔 우울함",
+            "🙂 그럭저럭",
+            "😊 꽤 괜찮음",
+          ],
+        },
+        {
+          title: "요즘 나를 제일 힘들게 하는 건?",
+          options: [
+            "💼 일/학업",
+            "❤️ 인간관계",
+            "💰 돈",
+            "🧍‍♂️ 나 자신",
+            "😴 피로/건강",
+            "❓잘 모르겠음",
+          ],
+        },
+        {
+          title: "오늘 하루는 어땠나요?",
+          options: [
+            "👍 잘 해냈어요",
+            "🔄 반복 같아요",
+            "💣 터졌어요",
+            "💬 위로받고 싶어요",
+            "🚀 변화 주고 싶어요",
+          ],
+        },
+        {
+          title: "바라는 한마디 느낌은?",
+          options: [
+            "🧸 위로",
+            "🔥 동기부여",
+            "💡 통찰",
+            "🪞 직면과 현실",
+            "🎈 가볍고 웃긴 말",
+          ],
+        },
+      ];
+
+      let current = 0;
+      const answers = [];
+
+      const questionContainer = document.getElementById("question-container");
+      const progress = document.getElementById("progress");
+      const nextBtn = document.getElementById("next-btn");
+      const prevBtn = document.getElementById("prev-btn");
+
+      function renderQuestion() {
+        const q = questions[current];
+        progress.textContent = `${current + 1} / ${questions.length}`;
+
+        questionContainer.innerHTML = `
+          <h2 class="text-lg font-semibold text-gray-700 mb-4">${q.title}</h2>
+          <div class="grid grid-cols-2 gap-3">
+            ${q.options
+              .map(
+                (opt, idx) => `
+              <button
+                class="option-btn border border-gray-300 rounded-xl px-3 py-2 text-gray-700 hover:bg-blue-50"
+                data-idx="${idx}"
+              >
+                ${opt}
+              </button>`
+              )
+              .join("")}
+          </div>
+        `;
+
+        document.querySelectorAll(".option-btn").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            answers[current] = btn.textContent;
+            nextBtn.disabled = false;
+            document
+              .querySelectorAll(".option-btn")
+              .forEach((b) =>
+                b.classList.remove("bg-blue-100", "border-blue-400")
+              );
+            btn.classList.add("bg-blue-100", "border-blue-400");
+          });
+        });
+
+        nextBtn.disabled = !answers[current];
+        prevBtn.disabled = current === 0;
+      }
+
+      nextBtn.addEventListener("click", () => {
+        if (current < questions.length - 1) {
+          current++;
+          renderQuestion();
+        } else {
+          showResult();
+        }
+      });
+
+      prevBtn.addEventListener("click", () => {
+        if (current > 0) {
+          current--;
+          renderQuestion();
+        }
+      });
+
+      function showResult() {
+        const summary = answers.join(" / ");
+        questionContainer.innerHTML = `
+          <h2 class="text-xl font-semibold text-gray-800 mb-4">✨ 너에게 꼭 필요한 한마디</h2>
+          <p class="text-gray-700 mb-6">"${generateMessage()}"</p>
+          <button class="bg-blue-500 text-white px-4 py-2 rounded-lg" onclick="location.reload()">다시 해보기</button>
+        `;
+        progress.textContent = "완료!";
+        nextBtn.style.display = "none";
+        prevBtn.style.display = "none";
+      }
+
+      function generateMessage() {
+        // 향후 AI 메시지 생성 API 연동 포인트
+        return "지금 네가 느끼는 감정은 틀린 게 아니야. 그걸 견디고 있는 너는 꽤 대단해.";
+      }
+
+      // 초기 렌더링
+      renderQuestion();
+    </script>
+  </body>
+</html>
