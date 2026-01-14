@@ -28,15 +28,58 @@
         text-align: center;
 }
   </style>
+  <style>
+    .lang-switch {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      display: inline-flex;
+      gap: 0;
+      padding: 3px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      z-index: 100;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    .lang-switch button {
+      border: none;
+      background: transparent;
+      color: rgba(0, 0, 0, 0.6);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-width: 44px;
+      text-align: center;
+      letter-spacing: 0.02em;
+    }
+    .lang-switch button.active {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+    }
+    .lang-switch button:not(.active):hover {
+      background: rgba(59, 130, 246, 0.1);
+      color: rgba(0, 0, 0, 0.9);
+    }
+  </style>
 </head>
   <body
     class="bg-gradient-to-br from-blue-50 to-purple-100 min-h-screen flex flex-col items-center justify-center p-6"
   >
+  <div class="lang-switch" role="tablist" aria-label="Language switcher">
+    <button type="button" data-lang="ko" class="active">KR</button>
+    <button type="button" data-lang="en">EN</button>
+  </div>
     <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 text-center">
-      <h1 class="text-2xl font-bold text-gray-800 mb-2">
+      <h1 class="text-2xl font-bold text-gray-800 mb-2" data-i18n="title">
         🧭 지금 나에게 가장 필요한 한마디
       </h1>
-      <p class="text-sm text-gray-600 mb-6">
+      <p class="text-sm text-gray-600 mb-6" data-i18n="subtitle">
         몇 가지 감정과 상황을 클릭하면,<br />오늘 너에게 필요한 말 한 줄을
         전해줄게요.
       </p>
@@ -53,11 +96,12 @@
           class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg"
           disabled
         >
-          이전
+          <span data-i18n="prevBtn">이전</span>
         </button>
         <button
           id="next-btn"
           class="bg-blue-500 text-white px-4 py-2 rounded-lg"
+          data-i18n="nextBtn"
         >
           다음
         </button>
@@ -70,14 +114,136 @@
       rel="noopener noreferrer"
       target="_blank"
     >
-      다른 서비스 보기
+      <span data-i18n="moreServices">다른 서비스 보기</span>
       <span aria-hidden="true">→</span>
     </a>
 
     <script>
-      const questions = [
+      // =========================
+      // i18n
+      // =========================
+      const translations = {
+        ko: {
+          metaTitle: "지금 나에게 필요한 한마디",
+          metaDescription: "몇 가지 감정과 상황을 클릭하면, 오늘 너에게 필요한 말 한 줄을 전해줄게요.",
+          title: "🧭 지금 나에게 가장 필요한 한마디",
+          subtitle: "몇 가지 감정과 상황을 클릭하면,<br />오늘 너에게 필요한 말 한 줄을 전해줄게요.",
+          prevBtn: "이전",
+          nextBtn: "다음",
+          moreServices: "다른 서비스 보기",
+          resultTitle: "✨ 너에게 꼭 필요한 한마디",
+          retryBtn: "다시 해보기",
+          progressComplete: "완료!",
+          defaultMessage: "지금 네가 느끼는 감정은 틀린 게 아니야. 그걸 견디고 있는 너는 꽤 대단해.",
+        },
+        en: {
+          metaTitle: "What I Need Right Now",
+          metaDescription: "Click on a few emotions and situations, and I'll give you the one line you need today.",
+          title: "🧭 What I Need Right Now",
+          subtitle: "Click on a few emotions and situations,<br />and I'll give you the one line you need today.",
+          prevBtn: "Previous",
+          nextBtn: "Next",
+          moreServices: "View More Services",
+          resultTitle: "✨ The One Line You Need",
+          retryBtn: "Try Again",
+          progressComplete: "Complete!",
+          defaultMessage: "The emotions you're feeling right now aren't wrong. You're pretty amazing for enduring them.",
+        },
+      };
+
+      const defaultLang = "ko";
+      const supportedLangs = ["ko", "en"];
+      let currentLang = defaultLang;
+
+      function t(key, vars = {}) {
+        const langTable = translations[currentLang] || translations.ko;
+        let template = langTable?.[key] ?? translations.ko?.[key] ?? key;
+        if (typeof template !== "string") return template;
+        Object.keys(vars).forEach((k) => {
+          template = template.replace(new RegExp(`\\{${k}\\}`, "g"), vars[k]);
+        });
+        return template;
+      }
+
+      function applyTranslations() {
+        document.title = t("metaTitle");
+        const descMeta = document.querySelector('meta[name="description"]');
+        if (descMeta) descMeta.setAttribute("content", t("metaDescription"));
+        document.documentElement.lang = currentLang;
+        document.querySelectorAll("[data-i18n]").forEach((el) => {
+          if (el.tagName === "BUTTON" && el.id === "next-btn") {
+            el.textContent = t(el.dataset.i18n);
+          } else {
+            el.textContent = t(el.dataset.i18n);
+          }
+        });
+        document.querySelectorAll("[data-i18n-html]").forEach((el) => {
+          el.innerHTML = t(el.dataset.i18nHtml);
+        });
+        document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+          el.placeholder = t(el.dataset.i18nPlaceholder);
+        });
+      }
+
+      function detectLang() {
+        const params = new URLSearchParams(window.location.search);
+        const paramLang = params.get("lang");
+        if (supportedLangs.includes(paramLang)) return paramLang;
+        const stored = localStorage.getItem("preferredLang");
+        if (supportedLangs.includes(stored)) return stored;
+        const intlLocale =
+          typeof Intl === "object" && typeof Intl.DateTimeFormat === "function"
+            ? Intl.DateTimeFormat().resolvedOptions().locale
+            : "";
+        const sources = [
+          ...(navigator.languages || []),
+          navigator.language,
+          navigator.userLanguage,
+          intlLocale,
+        ]
+          .filter(Boolean)
+          .map((locale) => locale.toLowerCase());
+        const hasKorean = sources.some((locale) => locale.startsWith("ko"));
+        return hasKorean ? "ko" : "en";
+      }
+
+      function setLang(lang, options = {}) {
+        const nextLang = supportedLangs.includes(lang) ? lang : defaultLang;
+        currentLang = nextLang;
+        window.currentLang = currentLang;
+        document.documentElement.lang = nextLang;
+        localStorage.setItem("preferredLang", nextLang);
+        document.querySelectorAll(".lang-switch button").forEach((button) => {
+          button.classList.toggle("active", button.dataset.lang === nextLang);
+        });
+        applyTranslations();
+        if (options.forceUpdate && typeof window.renderQuestion === "function") {
+          window.renderQuestion();
+        }
+        if (options.updateUrl) {
+          const url = new URL(window.location.href);
+          url.searchParams.set("lang", nextLang);
+          window.history.replaceState({}, "", url);
+        }
+      }
+
+      document.querySelectorAll(".lang-switch button").forEach((button) => {
+        button.addEventListener("click", () => {
+          setLang(button.dataset.lang, { updateUrl: true, forceUpdate: true });
+        });
+      });
+
+      setLang(detectLang(), { updateUrl: false, forceUpdate: false });
+
+      // Make t() function and currentLang globally available
+      window.t = t;
+      window.currentLang = currentLang;
+      window.setLang = setLang;
+
+      const QUESTIONS_BASE = [
         {
           title: "지금 기분을 고른다면?",
+          titleEn: "How are you feeling right now?",
           options: [
             "😴 지침",
             "😕 답답함",
@@ -86,9 +252,18 @@
             "🙂 그럭저럭",
             "😊 꽤 괜찮음",
           ],
+          optionsEn: [
+            "😴 Exhausted",
+            "😕 Frustrated",
+            "😠 Angry",
+            "😔 Depressed",
+            "🙂 So-so",
+            "😊 Pretty good",
+          ],
         },
         {
           title: "요즘 나를 제일 힘들게 하는 건?",
+          titleEn: "What's been hardest for me lately?",
           options: [
             "💼 일/학업",
             "❤️ 인간관계",
@@ -97,9 +272,18 @@
             "😴 피로/건강",
             "❓잘 모르겠음",
           ],
+          optionsEn: [
+            "💼 Work/Studies",
+            "❤️ Relationships",
+            "💰 Money",
+            "🧍‍♂️ Myself",
+            "😴 Fatigue/Health",
+            "❓ Not sure",
+          ],
         },
         {
           title: "오늘 하루는 어땠나요?",
+          titleEn: "How was your day today?",
           options: [
             "👍 잘 해냈어요",
             "🔄 반복 같아요",
@@ -107,9 +291,17 @@
             "💬 위로받고 싶어요",
             "🚀 변화 주고 싶어요",
           ],
+          optionsEn: [
+            "👍 Did well",
+            "🔄 Feels repetitive",
+            "💣 Exploded",
+            "💬 Want comfort",
+            "🚀 Want change",
+          ],
         },
         {
           title: "바라는 한마디 느낌은?",
+          titleEn: "What kind of message do you want?",
           options: [
             "🧸 위로",
             "🔥 동기부여",
@@ -117,8 +309,26 @@
             "🪞 직면과 현실",
             "🎈 가볍고 웃긴 말",
           ],
+          optionsEn: [
+            "🧸 Comfort",
+            "🔥 Motivation",
+            "💡 Insight",
+            "🪞 Facing reality",
+            "🎈 Light and funny",
+          ],
         },
       ];
+
+      function getQuestions() {
+        const isEnglish = window.currentLang === "en";
+        return QUESTIONS_BASE.map(q => ({
+          ...q,
+          title: isEnglish ? q.titleEn : q.title,
+          options: isEnglish ? q.optionsEn : q.options
+        }));
+      }
+
+      window.getQuestions = getQuestions;
 
       let current = 0;
       const answers = [];
@@ -129,6 +339,7 @@
       const prevBtn = document.getElementById("prev-btn");
 
       function renderQuestion() {
+        const questions = getQuestions();
         const q = questions[current];
         progress.textContent = `${current + 1} / ${questions.length}`;
 
@@ -167,6 +378,7 @@
       }
 
       nextBtn.addEventListener("click", () => {
+        const questions = getQuestions();
         if (current < questions.length - 1) {
           current++;
           renderQuestion();
@@ -183,21 +395,27 @@
       });
 
       function showResult() {
+        const t = window.t || ((key, vars = {}) => key);
         const summary = answers.join(" / ");
         questionContainer.innerHTML = `
-          <h2 class="text-xl font-semibold text-gray-800 mb-4">✨ 너에게 꼭 필요한 한마디</h2>
+          <h2 class="text-xl font-semibold text-gray-800 mb-4">${t("resultTitle")}</h2>
           <p class="text-gray-700 mb-6">"${generateMessage()}"</p>
-          <button class="bg-blue-500 text-white px-4 py-2 rounded-lg" onclick="location.reload()">다시 해보기</button>
+          <button class="bg-blue-500 text-white px-4 py-2 rounded-lg" onclick="location.reload()">${t("retryBtn")}</button>
         `;
-        progress.textContent = "완료!";
+        progress.textContent = t("progressComplete");
         nextBtn.style.display = "none";
         prevBtn.style.display = "none";
       }
 
       function generateMessage() {
+        const t = window.t || ((key, vars = {}) => key);
         // 향후 AI 메시지 생성 API 연동 포인트
-        return "지금 네가 느끼는 감정은 틀린 게 아니야. 그걸 견디고 있는 너는 꽤 대단해.";
+        return t("defaultMessage");
       }
+
+      // Make functions globally available for i18n
+      window.renderQuestion = renderQuestion;
+      window.showResult = showResult;
 
       // 초기 렌더링
       renderQuestion();
